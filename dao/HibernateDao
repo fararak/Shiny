@@ -1,0 +1,3 @@
+public class HibernateDao implements InterfaceDao{
+
+}
