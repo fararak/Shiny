@@ -1,0 +1,17 @@
+package dao;
+
+import java.util.List;
+import modele.BaseModele;
+
+/**
+ *
+ * @author Hp Gamers
+ */
+public interface InterfaceDao {
+    public void save(BaseModele b)throws Exception;
+    public void update(BaseModele b)throws Exception;
+    public void delete(BaseModele b)throws Exception;
+    public BaseModele findById(BaseModele b)throws Exception;
+    public List<BaseModele> findAll(BaseModele b)throws Exception;
+    public List<BaseModele> findAll(BaseModele b,int nbParPagination,int offset)throws Exception;
+}
