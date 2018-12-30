@@ -1,0 +1,239 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package dao;
+
+import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.Statement;
+import java.util.List;
+import modele.BaseModele;
+import modele.Compte;
+
+/**
+ *
+ * @author Hp Gamers
+ */
+public class GeneriqueDao implements InterfaceDao{
+    public String[] getNomTypeColonne(ResultSet res)throws Exception{
+        String[] rep=null;
+        ResultSetMetaData rsmd =null;
+        try{
+            rsmd = res.getMetaData();
+            rep = new String[rsmd.getColumnCount()];
+            for(int i=0;i<rep.length;i++){
+                String nomTypeColonne = rsmd.getColumnTypeName(i+1);
+                rep[i]= nomTypeColonne;
+            }
+        }
+        catch(Exception e){
+            throw e;
+        }
+        return rep;
+    }
+    public String[] getNomColonne(ResultSet res)throws Exception{
+        String[] rep=null;
+        ResultSetMetaData rsmd =null;
+        try{
+            rsmd = res.getMetaData();
+            rep = new String[rsmd.getColumnCount()];
+            for(int i=0;i<rep.length;i++){
+                String nomColonne = rsmd.getColumnName(i+1);
+                rep[i]= nomColonne;
+            }
+        }
+        catch(Exception e){
+            throw e;
+        }
+        return rep;
+    }
+    public int compterId(String table,String id,Connection c)throws Exception{
+        int res = 0;
+        Statement st =null;
+        ResultSet result =null;
+        try{
+            String sql = "select "+id+" from "+table+" where rownum<=1 order by "+id+" desc ";
+            System.out.println(sql);
+            st = c.createStatement();
+            result = st.executeQuery(sql);
+            while(result.next()){
+                res = result.getInt(1);
+            }
+        }
+        catch(Exception e){
+            throw e;
+        }
+        finally{
+            if(result!=null) result.close();
+            if(st!=null) st.close();
+        }
+        return res;
+    }
+    public String getValue(Field[] data) {
+
+           int taille = data.length;
+           String reponse = "?";
+           for (int i = 1; i < taille; i++) {
+                   reponse = reponse + ",?";
+           }
+           return reponse;
+    }
+
+    public String getListeAttribut(Field[] data) {
+    	String reponse = data[0].getName();
+        for (int i = 1; i < data.length; i++) {
+        
+        	reponse = reponse + "," + data[i].getName();
+        }
+        return reponse;
+    }
+    @Override
+    public void save(BaseModele b)throws Exception{
+        Connection c = null;
+        try{
+            c = Connexion.getConnexion();
+            save(b,c);
+        }
+        catch(Exception e){
+            throw e;
+        }
+        finally{
+            if(c!=null) c.close();
+        }
+    }
+    public void save(BaseModele b,Connection c) throws Exception{
+        Class classe = b.getClass();
+        Field[] attribut = classe.getDeclaredFields();
+        String nom = classe.getSimpleName();
+        PreparedStatement stmt = null;
+        try {
+            int id = compterId(nom,"id",c) + 1;
+            String sql = "INSERT INTO "+nom+"(id,"+getListeAttribut(attribut)+") VALUES (?,"+getValue(attribut)+")";
+            //System.out.println(sql);
+            stmt = c.prepareStatement(sql);
+            stmt.setInt(1,id);
+            int u = 1;
+            for (int i = 0; i < attribut.length; i++) {
+                
+            	attribut[i].setAccessible(true);
+                stmt.setObject(u + 1, attribut[i].get(b));
+                u++;
+            }
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            if (stmt != null) stmt.close();
+        }
+    }
+
+    @Override
+    public void update(BaseModele b) {
+        
+    }
+
+    @Override
+    public void delete(BaseModele b)throws Exception{
+        Connection c=null;
+        try{
+            c = Connexion.getConnexion();
+            delete(b,c);
+        }
+        catch(Exception e){
+            throw e;
+        }
+        finally{
+            if(c!=null) c.close();
+        }
+    }
+    public void delete(BaseModele b,Connection c)throws Exception{
+        Class classe = b.getClass();
+        String nom = classe.getSimpleName();
+        PreparedStatement st = null;
+        try{
+            String sql= "DELETE from " + nom + " where id" + nom + " =?";
+            System.out.println(sql);
+            st = c.prepareStatement(sql);
+            st.setObject(1, b.getId());
+            st.executeUpdate();
+            c.commit();
+        }
+        catch(Exception e){
+            throw e;
+        }
+        finally{
+            if(st!=null) st.close();
+        }
+    }
+    @Override
+    public BaseModele findById(BaseModele b)throws Exception {
+        BaseModele val = null;
+        return val;
+    }
+    public BaseModele  findById(BaseModele b,Connection c)throws Exception{
+        BaseModele val=null;
+        Class classe = b.getClass();
+        Field[] attribut = classe.getDeclaredFields();
+        String nom = classe.getSimpleName().toLowerCase();
+        PreparedStatement stmt = null;
+        ResultSet res =null;
+        try{
+            String sql = "select *from" +nom+" where id"+nom+" =?";
+            System.out.println(sql);
+            stmt =c.prepareStatement(sql);
+            res = stmt.executeQuery();
+            String[] nomColonne = getNomColonne(res);
+            String[] nomTypeColonne = getNomTypeColonne(res);
+            while(res.next()){
+                Object o = classe.newInstance();
+                for(int i = 1;i<=nomColonne.length;i++){
+                    
+                }
+            }
+        }   
+        catch(Exception e){
+            throw e;
+        }
+        finally{
+            
+        }
+        return val;
+    }
+    @Override
+    public List<BaseModele> findAll(BaseModele b)throws Exception {
+        return null;
+    }
+    public List<BaseModele> findAll(BaseModele b,Connection c)throws Exception{
+        List<BaseModele> val=null;
+        Class classe = b.getClass();
+        Field[] attribut = classe.getDeclaredFields();
+        String nom = classe.getSimpleName().toLowerCase();
+        PreparedStatement stmt = null;
+        ResultSet res =null;
+        try{
+            String sql = "select *from " +nom;
+            stmt = c.prepareStatement(sql);
+            res = stmt.executeQuery();
+            while(res.next()){
+                
+            }
+        }
+        catch(Exception e){
+            throw e;
+        }
+        finally{
+            
+        }
+        return val;
+    }
+    @Override
+    public List<BaseModele> findAll(BaseModele b, int nbParPagination, int offset) {
+        return null;
+    }
+   
+}
